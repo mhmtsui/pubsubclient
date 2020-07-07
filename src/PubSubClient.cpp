@@ -746,6 +746,7 @@ boolean PubSubClient::setBufferSize(uint16_t size) {
     if (size > MQTT_MAX_PACKET_SIZE){
         return false;
     }else{
+        this->bufferSize = size;
         return true;
     }
 #else

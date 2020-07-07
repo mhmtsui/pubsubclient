@@ -93,10 +93,11 @@ private:
 #ifdef USE_STATIC_MEM
    uint8_t _s_buf[MQTT_MAX_PACKET_SIZE];
    uint8_t * buffer = _s_buf;
+   uint16_t bufferSize = MQTT_MAX_PACKET_SIZE;
 #else
    uint8_t* buffer;
-#endif
    uint16_t bufferSize;
+#endif
    uint16_t keepAlive;
    uint16_t socketTimeout;
    uint16_t nextMsgId;
