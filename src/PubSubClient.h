@@ -12,6 +12,8 @@
 #include "Client.h"
 #include "Stream.h"
 
+#define USE_STATIC_MEM
+
 #define MQTT_VERSION_3_1      3
 #define MQTT_VERSION_3_1_1    4
 
@@ -88,7 +90,12 @@
 class PubSubClient : public Print {
 private:
    Client* _client;
+#ifdef USE_STATIC_MEM
+   uint8_t _s_buf[MQTT_MAX_PACKET_SIZE];
+   uint8_t * buffer = _s_buf;
+#else
    uint8_t* buffer;
+#endif
    uint16_t bufferSize;
    uint16_t keepAlive;
    uint16_t socketTimeout;

@@ -742,6 +742,13 @@ boolean PubSubClient::setBufferSize(uint16_t size) {
         // Cannot set it back to 0
         return false;
     }
+#ifdef USE_STATIC_MEM
+    if (size > MQTT_MAX_PACKET_SIZE){
+        return false;
+    }else{
+        return true;
+    }
+#else
     if (this->bufferSize == 0) {
         this->buffer = (uint8_t*)malloc(size);
     } else {
@@ -754,6 +761,7 @@ boolean PubSubClient::setBufferSize(uint16_t size) {
     }
     this->bufferSize = size;
     return (this->buffer != NULL);
+#endif
 }
 
 uint16_t PubSubClient::getBufferSize() {
