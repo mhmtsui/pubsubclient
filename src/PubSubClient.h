@@ -91,7 +91,7 @@ class PubSubClient : public Print {
 private:
    Client* _client;
 #ifdef USE_STATIC_MEM
-   uint8_t _s_buf[MQTT_MAX_PACKET_SIZE];
+   uint8_t _s_buf[MQTT_MAX_PACKET_SIZE] = {0};
    uint8_t * buffer = _s_buf;
    uint16_t bufferSize = MQTT_MAX_PACKET_SIZE;
 #else
