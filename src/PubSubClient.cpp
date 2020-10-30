@@ -410,25 +410,31 @@ boolean PubSubClient::loop() {
                             this->buffer[3] = (msgId & 0xFF);
                             _client->write(this->buffer,4);
                             lastOutActivity = t;
+                            return true;
 
                         } else {
                             payload = this->buffer+llen+3+tl;
                             callback(topic,payload,len-llen-3-tl);
+							return true;
                         }
                     }
                 } else if (type == MQTTPINGREQ) {
                     this->buffer[0] = MQTTPINGRESP;
                     this->buffer[1] = 0;
                     _client->write(this->buffer,2);
+					return true;
                 } else if (type == MQTTPINGRESP) {
                     pingOutstanding = false;
+                    return true;
                 }
+                return false;
             } else if (!connected()) {
                 // readPacket has closed the connection
                 return false;
             }
+            return false;
         }
-        return true;
+        return false;
     }
     return false;
 }
