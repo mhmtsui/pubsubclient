@@ -159,7 +159,9 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
 }
 
 PubSubClient::~PubSubClient() {
-  free(this->buffer);
+    #ifndef USE_STATIC_MEM
+    free(this->buffer);
+    #endif
 }
 
 boolean PubSubClient::connect(const char *id) {
@@ -370,35 +372,65 @@ uint32_t PubSubClient::readPacket(uint8_t* lengthLength) {
 boolean PubSubClient::loop() {
     if (connected()) {
         unsigned long t = millis();
+#ifdef DEBUG_MQTT
+        LOG.print('c');
+#endif
         if ((t - lastInActivity > this->keepAlive*1000UL) || (t - lastOutActivity > this->keepAlive*1000UL)) {
             if (pingOutstanding) {
                 this->_state = MQTT_CONNECTION_TIMEOUT;
+#ifdef DEBUG_MQTT
+                Serial.print("stop eth client");
+#endif
                 _client->stop();
+#ifdef DEBUG_MQTT
+                Serial.println("stopped");
+#endif
                 return false;
             } else {
                 this->buffer[0] = MQTTPINGREQ;
                 this->buffer[1] = 0;
+#ifdef DEBUG_MQTT
+                Serial.print("respond ping request");
+#endif
                 _client->write(this->buffer,2);
+#ifdef DEBUG_MQTT
+                Serial.println("written");
+#endif
                 lastOutActivity = t;
                 lastInActivity = t;
                 pingOutstanding = true;
             }
         }
         if (_client->available()) {
+#ifdef DEBUG_MQTT
+            Serial.println("client available");
+#endif
             uint8_t llen;
             uint16_t len = readPacket(&llen);
+#ifdef DEBUG_MQTT
+            Serial.print(len);Serial.print("|");
+#endif
             uint16_t msgId = 0;
             uint8_t *payload;
             if (len > 0) {
                 lastInActivity = t;
                 uint8_t type = this->buffer[0]&0xF0;
+#ifdef DEBUG_MQTT
+                Serial.print(type);Serial.print("|");
+#endif
                 if (type == MQTTPUBLISH) {
                     if (callback) {
                         uint16_t tl = (this->buffer[llen+1]<<8)+this->buffer[llen+2]; /* topic length in bytes */
+#ifdef DEBUG_MQTT
+                        Serial.print(tl);Serial.print("|");
+#endif
                         memmove(this->buffer+llen+2,this->buffer+llen+3,tl); /* move topic inside buffer 1 byte to front */
                         this->buffer[llen+2+tl] = 0; /* end the topic as a 'C' string with \x00 */
                         char *topic = (char*) this->buffer+llen+2;
                         // msgId only present for QOS>0
+#ifdef DEBUG_MQTT
+                        Serial.print(this->buffer[0]);Serial.print("|");
+#endif
                         if ((this->buffer[0]&0x06) == MQTTQOS1) {
                             msgId = (this->buffer[llen+3+tl]<<8)+this->buffer[llen+3+tl+1];
                             payload = this->buffer+llen+3+tl+2;
@@ -409,20 +441,32 @@ boolean PubSubClient::loop() {
                             this->buffer[2] = (msgId >> 8);
                             this->buffer[3] = (msgId & 0xFF);
                             _client->write(this->buffer,4);
+#ifdef DEBUG_MQTT
+                            Serial.println("4 written");
+#endif
                             lastOutActivity = t;
                             return true;
 
                         } else {
                             payload = this->buffer+llen+3+tl;
+#ifdef DEBUG_MQTT
+                            Serial.print("enter callback");
+#endif
                             callback(topic,payload,len-llen-3-tl);
-							return true;
+#ifdef DEBUG_MQTT
+                            Serial.println("exited");
+#endif
+                            return true;
                         }
                     }
                 } else if (type == MQTTPINGREQ) {
                     this->buffer[0] = MQTTPINGRESP;
                     this->buffer[1] = 0;
                     _client->write(this->buffer,2);
-					return true;
+#ifdef DEBUG_MQTT
+                    Serial.println("2 written");
+#endif
+                    return true;
                 } else if (type == MQTTPINGRESP) {
                     pingOutstanding = false;
                     return true;
