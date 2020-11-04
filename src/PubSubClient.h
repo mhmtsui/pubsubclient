@@ -12,7 +12,7 @@
 #include "Client.h"
 #include "Stream.h"
 
-#define DEBUG_MQTT
+//#define DEBUG_MQTT
 #define LOG Serial
 
 #define USE_STATIC_MEM
